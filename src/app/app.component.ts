@@ -3,13 +3,14 @@ import { AfterViewInit, Component, ElementRef, NO_ERRORS_SCHEMA, ViewChild } fro
 import * as ace from "ace-builds";
 import 'ace-builds/src-noconflict/ext-language_tools';
 
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
+
 export class AppComponent implements AfterViewInit{
+  private aceEditor: ace.Ace.Editor;
   title = 'ace-editor-demo';
   @ViewChild("editor") private editor: ElementRef<HTMLElement>;
   annotations: Array<Object> = [];
@@ -18,16 +19,14 @@ export class AppComponent implements AfterViewInit{
 
   ngAfterViewInit(): void {
 
-
-    
     ace.config.set("fontSize", "14px");
     //todo I am concerned that this file is online
     ace.config.set('basePath', 'https://unpkg.com/ace-builds@1.4.12/src-noconflict');
     ace.require("ace/ext/language_tools");
-    const aceEditor = ace.edit(this.editor.nativeElement);
+    this.aceEditor = ace.edit(this.editor.nativeElement);
     
-    aceEditor.session.setValue("<h1>Ace Editor works great in Angular!</h1>");
-    aceEditor.setOptions({
+    this.aceEditor.session.setValue("<h1>Ace Editor works great in Angular!</h1>");
+    this.aceEditor.setOptions({
      // editor options
     selectionStyle: 'line',// "line"|"text"
     highlightActiveLine: true, // boolean
@@ -87,10 +86,10 @@ export class AppComponent implements AfterViewInit{
     mode: 'ace/mode/lucene' // string: path to language mode 
   });
 
-      aceEditor.on("change", () => {
-      console.log(aceEditor.getValue());
-      console.log(aceEditor.getSession().getAnnotations());
-      this.annotations = aceEditor.getSession().getAnnotations();
+      this.aceEditor.on("change", () => {
+      console.log(this.aceEditor.getValue());
+      console.log(this.aceEditor.getSession().getAnnotations());
+      this.annotations = this.aceEditor.getSession().getAnnotations();
 
     })
   }
