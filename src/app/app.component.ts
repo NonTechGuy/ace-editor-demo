@@ -1,6 +1,7 @@
 //https://www.npmjs.com/package/ace-builds
 import { AfterViewInit, Component, ElementRef, NO_ERRORS_SCHEMA, ViewChild } from "@angular/core";
 import * as ace from "ace-builds";
+import 'ace-builds/src-noconflict/ext-language_tools';
 
 
 @Component({
@@ -16,14 +17,16 @@ export class AppComponent implements AfterViewInit{
   
 
   ngAfterViewInit(): void {
+
+
+    
     ace.config.set("fontSize", "14px");
     //todo I am concerned that this file is online
     ace.config.set('basePath', 'https://unpkg.com/ace-builds@1.4.12/src-noconflict');
+    ace.require("ace/ext/language_tools");
     const aceEditor = ace.edit(this.editor.nativeElement);
     
     aceEditor.session.setValue("<h1>Ace Editor works great in Angular!</h1>");
-    //aceEditor.setTheme('ace/theme/twilight'); 
-    //aceEditor.session.setMode('ace/mode/lucene');
     aceEditor.setOptions({
      // editor options
     selectionStyle: 'line',// "line"|"text"
@@ -41,6 +44,7 @@ export class AppComponent implements AfterViewInit{
     enableBasicAutocompletion: true,
     enableSnippets: true,
     enableLiveAutocompletion: true,
+
     animatedScroll: false, // boolean: true if scroll should be animated
     displayIndentGuides: false, // boolean: true if the indent should be shown. See 'showInvisibles'
     showInvisibles: false, // boolean -> displayIndentGuides: true if show the invisible tabs/spaces in indents
