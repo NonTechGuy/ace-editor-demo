@@ -2,6 +2,7 @@
 import { AfterViewInit, Component, ElementRef, NO_ERRORS_SCHEMA, ViewChild } from "@angular/core";
 import * as ace from "ace-builds";
 import 'ace-builds/src-noconflict/ext-language_tools';
+import "ace-builds/src-noconflict/mode-lucene-ext";
 
 @Component({
   selector: 'app-root',
@@ -24,8 +25,9 @@ export class AppComponent implements AfterViewInit{
     ace.config.set('basePath', 'https://unpkg.com/ace-builds@1.4.12/src-noconflict');
     ace.require("ace/ext/language_tools");
     this.aceEditor = ace.edit(this.editor.nativeElement);
-    
+
     this.aceEditor.session.setValue("<h1>Ace Editor works great in Angular!</h1>");
+    
     this.aceEditor.setOptions({
      // editor options
     selectionStyle: 'line',// "line"|"text"
@@ -83,14 +85,24 @@ export class AppComponent implements AfterViewInit{
     wrap: true, // boolean | string | number: true/'free' means wrap instead of horizontal scroll, false/'off' means horizontal scroll instead of wrap, and number means number of column before wrap. -1 means wrap at print margin
     indentedSoftWrap: true, // boolean
     foldStyle: 'markbegin', // enum: 'manual'/'markbegin'/'markbeginend'.
-    mode: 'ace/mode/lucene' // string: path to language mode 
+    mode: 'ace/mode/lucene-ext' // string: path to language mode 
   });
 
-      this.aceEditor.on("change", () => {
-      console.log(this.aceEditor.getValue());
-      console.log(this.aceEditor.getSession().getAnnotations());
-      this.annotations = this.aceEditor.getSession().getAnnotations();
+  this.aceEditor.completers.push({
+    getCompletions: function(editor, session, pos, prefix, callback) {
+      callback(null, [
+        {value: "AND", score: 1000, meta: "keyword"},
+        {value: "OR", score: 1000, meta: "keyword"},
+        {value: "AND NOT", score: 1000, meta: "keyword"},
+        {value: "NEAR", score: 1000, meta: "keyword"},
+        {value: "AT-LEAST", score: 1000, meta: "keyword"}
+      ]);
+    }
+  })
 
-    })
+      /*this.aceEditor.on("change", () => {
+      var err = this.aceEditor.getSession().getAnnotations();
+      console.log(err)
+    })*/
   }
 }
