@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import * as ace from 'ace-builds';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import 'ace-builds/src-noconflict/mode-lucene-ext';
 
 @Component({
   selector: 'app-root',

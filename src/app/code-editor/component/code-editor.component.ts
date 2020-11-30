@@ -7,8 +7,10 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as ace from 'ace-builds';
+import 'ace-builds/webpack-resolver';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import 'ace-builds/src-noconflict/mode-lucene-ext';
+import 'ace-builds/src-noconflict/mode-lucene';
+//import '../mode-lucene-ext';
 
 @Component({
   selector: 'app-code-editor',
@@ -65,7 +67,7 @@ export class CodeEditorComponent implements AfterViewInit {
     //tooltipFollowsMouse: true, // boolean: true if the gutter tooltip should follow mouse
 
     // session options
-    //firstLineNumber: 1, // number: the line number in first line
+    firstLineNumber: 1, // number: the line number in first line
     overwrite: false, // boolean
     newLineMode: 'auto', // "auto" | "unix" | "windows"
     //useWorker: true, // boolean: true if use web worker for loading scripts
@@ -74,7 +76,7 @@ export class CodeEditorComponent implements AfterViewInit {
     wrap: true, // boolean | string | number: true/'free' means wrap instead of horizontal scroll, false/'off' means horizontal scroll instead of wrap, and number means number of column before wrap. -1 means wrap at print margin
     indentedSoftWrap: true, // boolean
     foldStyle: 'markbegin', // enum: 'manual'/'markbegin'/'markbeginend'.
-    mode: 'ace/mode/lucene-ext', // string: path to language mode
+    mode: 'ace/mode/lucene', // string: path to language mode
   };
 
   @ViewChild('editor') private editor: ElementRef<HTMLElement>;
@@ -95,10 +97,10 @@ export class CodeEditorComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     ace.config.set('fontSize', '14px');
     //todo I am concerned that this file is online
-    ace.config.set(
+    /*ace.config.set(
       'basePath',
       'https://unpkg.com/ace-builds@1.4.12/src-noconflict'
-    );
+    );*/
     ace.require('ace/ext/language_tools');
     this._codeEditor = ace.edit(this.editor.nativeElement);
 
@@ -108,37 +110,40 @@ export class CodeEditorComponent implements AfterViewInit {
 
     this._codeEditor.setOptions(this._options);
 
+    //AND|AND NOT|OR|OR NOT|NOT|TO|AT-LEAST|NEAR
     this._codeEditor.completers.push({
       getCompletions: function (editor, session, pos, prefix, callback) {
         callback(null, [
           { value: 'AND', score: 1000, meta: 'keyword' },
-          { value: 'OR', score: 1000, meta: 'keyword' },
           { value: 'AND NOT', score: 1000, meta: 'keyword' },
+          { value: 'OR', score: 1000, meta: 'keyword' },
+          { value: 'OR NOT', score: 1000, meta: 'keyword' },
           { value: 'NOT', score: 1000, meta: 'keyword' },
-          { value: 'NEAR', score: 1000, meta: 'keyword' },
+          { value: 'TO', score: 1000, meta: 'keyword' },
           { value: 'AT-LEAST', score: 1000, meta: 'keyword' },
+          { value: 'NEAR', score: 1000, meta: 'keyword' },
         ]);
       },
     });
 
-    /*this.aceEditor.on('change', () => {
-      var err = this.aceEditor.getSession().getAnnotations();
-      console.log(err)
-      });*/
+    this._codeEditor.on('change', () => {
+      //var err = this.aceEditor.getSession().getAnnotations();
+      this.validate();
+    });
   }
-  /**
-   * @returns - the current editor's content.
-   */
-  /*public getContent() {
-    if (this.codeEditor) {
-      const code = this.codeEditor.getValue();
-      return code;
-    }
-  }*/
 
-  /**
-   * @param content - set as the editor's content.
-   */
+  private validate() {
+    console.log(this.getContent());
+  }
+
+  public getContent() {
+    let code: string = '';
+    if (this._codeEditor) {
+      code = this._codeEditor.getValue();
+    }
+    return code;
+  }
+
   public setContent(content: string): void {
     if (this._codeEditor) {
       this._codeEditor.setValue(content);
