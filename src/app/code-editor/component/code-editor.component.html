@@ -1,3 +1,4 @@
 <h2>Advanced keywords</h2>
 <p>Type in a boolean search query using keywords, phrases and operators</p>
-<div class="app-ace-editor" #editor></div>
+<div [class]="isValid? 'app-ace-editor app-ace-editor--valid': 'app-ace-editor app-ace-editor--error'" #editor></div>
+<div *ngIf="!isValid"><p>{{errorMsg}}</p></div>
