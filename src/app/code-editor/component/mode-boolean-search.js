@@ -15,7 +15,7 @@ ace.define(
       .TextHighlightRules;
 
     var BooleanHighlightRules = function () {
-      var keywords = "AND|AND NOT|OR|OR NOT|NOT|TO|AT-LEAST|NEAR";
+      var keywords = "AND|OR|NOT";
 
       var buildinConstants = "null|true|false";
 
@@ -56,7 +56,7 @@ ace.define(
           },
           {
             token: "keyword.operator",
-            regex: "(AND|AND NOT|OR|OR NOT|NOT|TO|AT-LEAST|NEAR)\\b",
+            regex: "(AND|OR|NOT)\\b",
           },
           {
             token: "paren.lparen",

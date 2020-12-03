@@ -11,10 +11,11 @@ import * as ace from 'ace-builds';
 import 'ace-builds/webpack-resolver';
 import 'ace-builds/src-noconflict/ext-language_tools';
 //import 'ace-builds/src-noconflict/mode-lucene';
-import { fromEvent, interval } from 'rxjs';
-import { debounce } from 'rxjs/operators';
+import { fromEvent, interval, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 //import 'ace-builds/src-noconflict/mode-boolean-search.js';
 import './mode-boolean-search.js';
+//import * as booleanParser from '../boolean-parser.js';
 
 @Component({
   selector: 'app-code-editor',
@@ -22,9 +23,10 @@ import './mode-boolean-search.js';
   styleUrls: ['./code-editor.component.scss'],
 })
 export class CodeEditorComponent implements AfterViewInit {
+  private textChange = new Subject<string>();
   public isValid: Boolean = true;
   public errorMsg: string;
-  private _booleanParser: any;
+  //private _booleanParser: any;
   private _codeEditor: ace.Ace.Editor;
   private _options = {
     // editor options
@@ -88,11 +90,12 @@ export class CodeEditorComponent implements AfterViewInit {
 
   @ViewChild('editor') private editor: ElementRef<HTMLElement>;
   @Input() content: string;
+  //@ViewChild('input') input: ElementRef;
 
   constructor() {}
 
   ngAfterViewInit(): void {
-    this._booleanParser = require('boolean-parser');
+    //this._booleanParser = require('boolean-parser');
     ace.config.set('fontSize', '14px');
     //todo I am concerned that this file is online
     /*ace.config.set(
@@ -124,70 +127,100 @@ export class CodeEditorComponent implements AfterViewInit {
       },
     });*/
 
-    this._codeEditor.on('change', () => {
-      //var err = this.aceEditor.getSession().getAnnotations();
-      this.validate();
-      //var myEfficientFn = this.debounce(this.validate, 250);
-      //let myVar = setTimeout(this.validate.bind(this), 1000);
-    });
-
-    /*let textChange = this.getContent();
-    textChange
-      .debounceTime(300)
-      .distinctUntilChanged()
-      .subscribe(() => this.validate());*/
-
-    /*const changes = fromEvent(this._codeEditor, 'change');
-    const result = changes.pipe(debounce(() => interval(1000)));
-    result.subscribe(function () {
-      this.validate();
-    });*/
+    fromEvent(this.editor.nativeElement, 'keyup')
+      .pipe(
+        debounceTime(1000),
+        distinctUntilChanged(),
+        tap((text) => {
+          this.validate();
+        })
+      )
+      .subscribe();
   }
 
   private validate() {
-    //console.log('validate');
     const searchPhrase = this.getContent();
-    console.log(searchPhrase);
-    //limited to AND OR operators
-    const parsedQuery = this._booleanParser.parseBooleanQuery(searchPhrase);
-    let position: number = 0;
-    let cont: boolean = false;
+    let characters = searchPhrase.split('');
+    let phraseArray = searchPhrase.split(' ');
+    let regOp = new RegExp(`(AND|OR|NOT)\\b`);
+    let bracketValid: boolean = false;
+    let bracketCount = 0;
+    let quotationValid: boolean = false;
+    let doubleOperator: boolean = false;
+    let lastIsOperator: boolean = false;
 
-    //rules
-    /*let regx = new RegExp(`(AND|AND NOT|OR|OR NOT)\\b`);
-    if (regx.test(parsedQuery[0][0])) {
+    //check bracket count
+    let iL = searchPhrase.length;
+    for (var i = 0; i < iL; i++) {
+      if (searchPhrase[i] === '(') {
+        bracketCount++;
+      }
+      if (searchPhrase[i] === ')') {
+        bracketCount--;
+      }
+    }
+
+    let prev;
+    let curr;
+
+    //check same oprator example AND AND
+    let kL = phraseArray.length;
+    for (var i = 0; i < kL; i++) {
+      prev = phraseArray[i - 1];
+      curr = phraseArray[i];
+      if (!doubleOperator) {
+        if (curr === prev) {
+          if (regOp.test(curr)) {
+            doubleOperator = true;
+            this.errorMsg = `Have a double operator at position${i}`;
+          }
+        } else {
+          doubleOperator = false;
+        }
+      }
+      //check if last is operator
+      if (
+        (regOp.test(prev) && phraseArray[i] === '') ||
+        (regOp.test(prev) && phraseArray[i] === ')')
+      ) {
+        lastIsOperator = true;
+        this.errorMsg = `Have empty expression expecting expression at position ${i}`;
+      } else {
+        lastIsOperator = false;
+      }
+    }
+    //check bracket count
+    if (bracketCount > 0) {
+      bracketValid = false;
+      this.errorMsg = `Have an missing closing bracket at position${i}`;
+    } else if (bracketCount === 0) {
+      bracketValid = true;
+    } else {
+      bracketValid = false;
+    }
+
+    //check quotation count
+    /*var quotations = characters.filter((char) => char === '"');
+    if (quotationValid) {
+      if (quotations.length % 2 != 0) {
+        quotationValid = false;
+      } else {
+        quotationValid = true;
+        this.errorMsg = `Have a missing closing " in the expression`;
+      }
+    }*/
+
+    //check ALL conditions
+    if (bracketValid && !doubleOperator && !lastIsOperator) {
+      this.isValid = true;
+    } else {
       this.isValid = false;
-      this.errorMsg = `Invalid token expecting one of these [NOT, <phrase>, (, OCCURS, AT-LEAST] at position 0`;
-      cont = false;
-    } else {
-      cont = true;
-    }*/
-
-    //empty string after operator
-    /*if (cont) {
-      parsedQuery.forEach((value: string, index: number) => {
-        position++;
-        this.isValid = value.indexOf('') >= 0 ? false : true;
-        this.errorMsg = `Have an empty expression at position ${
-          this.getContent().length
-        }`;
-      });
-    }*/
-
-    // brackets
-    /*et regx2 = new RegExp(`/\(([^)]+)\)/`);
-    if (regx2.test(this.getContent())) {
-      console.log('brackets closed');
-    } else {
-      console.log('brackets open');
-    }*/
+    }
 
     // empty code editor
     if (this.getContent() === '') {
       this.isValid = true;
     }
-
-    //console.log(parsedQuery);
   }
 
   public getContent() {
@@ -203,20 +236,4 @@ export class CodeEditorComponent implements AfterViewInit {
       this._codeEditor.setValue(content);
     }
   }
-
-  /*public debounce(func, wait, immediate) {
-    var timeout;
-    return function () {
-      var context = this,
-        args = arguments;
-      var later = function () {
-        timeout = null;
-        if (!immediate) func.apply(context, args);
-      };
-      var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-      if (callNow) func.apply(context, args);
-    };
-  }*/
 }
