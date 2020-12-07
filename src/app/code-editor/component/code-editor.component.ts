@@ -90,24 +90,14 @@ export class CodeEditorComponent implements AfterViewInit {
 
   @ViewChild('editor') private editor: ElementRef<HTMLElement>;
   @Input() content: string;
-  //@ViewChild('input') input: ElementRef;
 
   constructor() {}
 
   ngAfterViewInit(): void {
     //this._booleanParser = require('boolean-parser');
     ace.config.set('fontSize', '14px');
-    //todo I am concerned that this file is online
-    /*ace.config.set(
-      'basePath',
-      'https://unpkg.com/ace-builds@1.4.12/src-noconflict'
-    );*/
     ace.require('ace/ext/language_tools');
     this._codeEditor = ace.edit(this.editor.nativeElement);
-
-    /*this._codeEditor.session.setValue(
-      '<h1>Ace Editor works great in Angular!</h1>'
-    );*/
 
     this._codeEditor.setOptions(this._options);
 
@@ -145,20 +135,19 @@ export class CodeEditorComponent implements AfterViewInit {
     let regOp = new RegExp(`(AND|OR|NOT)\\b`);
     let bracketValid: boolean = false;
     let bracketCount = 0;
-    let quotationValid: boolean = false;
+    let quotationValid: boolean = true;
     let doubleOperator: boolean = false;
     let lastIsOperator: boolean = false;
 
     //check bracket count
-    let iL = searchPhrase.length;
-    for (var i = 0; i < iL; i++) {
-      if (searchPhrase[i] === '(') {
+    characters.forEach((char) => {
+      if (char === '(') {
         bracketCount++;
       }
-      if (searchPhrase[i] === ')') {
+      if (char === ')') {
         bracketCount--;
       }
-    }
+    });
 
     let prev;
     let curr;
@@ -176,17 +165,18 @@ export class CodeEditorComponent implements AfterViewInit {
           }
         } else {
           doubleOperator = false;
+          this.errorMsg = ``;
         }
       }
       //check if last is operator
-      if (
-        (regOp.test(prev) && phraseArray[i] === '') ||
-        (regOp.test(prev) && phraseArray[i] === ')')
-      ) {
-        lastIsOperator = true;
-        this.errorMsg = `Have empty expression expecting expression at position ${i}`;
-      } else {
-        lastIsOperator = false;
+      if (regOp.test(prev)) {
+        if (phraseArray[i] === '' || phraseArray[i] === ')') {
+          lastIsOperator = true;
+          this.errorMsg = `Have empty expression expecting expression at position ${i}`;
+        } else {
+          lastIsOperator = false;
+          this.errorMsg = ``;
+        }
       }
     }
     //check bracket count
@@ -195,27 +185,29 @@ export class CodeEditorComponent implements AfterViewInit {
       this.errorMsg = `Have an missing closing bracket at position${i}`;
     } else if (bracketCount === 0) {
       bracketValid = true;
+      this.errorMsg = ``;
     } else {
       bracketValid = false;
     }
+    console.log(bracketCount);
 
     //check quotation count
-    /*var quotations = characters.filter((char) => char === '"');
-    if (quotationValid) {
-      if (quotations.length % 2 != 0) {
-        quotationValid = false;
-      } else {
+    var quotations = characters.filter((char) => char === '"');
+    if (quotations.length) {
+      if (quotations.length % 2 == 0) {
         quotationValid = true;
+        this.errorMsg = ``;
+      } else {
+        quotationValid = false;
         this.errorMsg = `Have a missing closing " in the expression`;
       }
-    }*/
+    }
 
     //check ALL conditions
-    if (bracketValid && !doubleOperator && !lastIsOperator) {
-      this.isValid = true;
-    } else {
-      this.isValid = false;
-    }
+    this.isValid =
+      bracketValid && !doubleOperator && !lastIsOperator && quotationValid
+        ? true
+        : false;
 
     // empty code editor
     if (this.getContent() === '') {
